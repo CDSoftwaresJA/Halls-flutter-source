@@ -1,10 +1,29 @@
 import 'package:audioplayer/audioplayer.dart';
 
-Future<void> play() async {
-  String url =
-      "https://storage-halls.s3-us-west-2.amazonaws.com/upload/1584536514.mp3";
-  AudioPlayer audioPlugin = new AudioPlayer();
-  AudioPlayerState audioPlayerState = audioPlugin.state;
-  await audioPlugin.play(url);
-  //setState(() => audioPlayerState = AudioPlayerState.PLAYING);
+class MusicPlayer {
+  AudioPlayer audioPlugin;
+  AudioPlayerState audioPlayerState;
+  double current = 0;
+  MusicPlayer() {
+    audioPlugin = new AudioPlayer();
+    audioPlayerState = audioPlugin.state;
+  }
+
+  Future<void> play(String url) async {
+    await audioPlugin.play(url);
+    //setState(() => audioPlayerState = AudioPlayerState.PLAYING);
+  }
+
+  Future<void> pause() async {
+    audioPlugin.pause();
+    current = audioPlugin.duration.inSeconds as double;
+  }
+
+  Future<void> stop() async {
+    audioPlugin.stop();
+  }
+
+  Future<void> seek() async {
+    audioPlugin.seek(current);
+  }
 }

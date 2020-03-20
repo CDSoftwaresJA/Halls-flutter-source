@@ -1,38 +1,54 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:hallandroidsource/dialogs.dart';
-import 'package:hallandroidsource/toasts.dart';
+import 'package:hallsmusic/dialogs.dart';
+import 'package:hallsmusic/song.dart';
+import 'package:hallsmusic/toasts.dart';
 import 'package:http/http.dart';
-
-
 
 class RequestBuilder {
   BuildContext context;
   RequestBuilder(this.context);
 
-  makeGetRequest(String url) async   {
+  Response response;
+  makeGetRequest(String url) async {
     // make GET request
-    Response response = await get(url) ; // sample info available in response
+    Response response = await get(url); // sample info available in response
     int statusCode = response.statusCode;
     Map<String, String> headers = response.headers;
     String contentType = headers['content-type'];
     var body = json.decode(response.body);
     body = body['items'];
-    Dialogs dialogs = new Dialogs(context);
 
-    dialogs.ShowD("JSON GET", getPrettyJSONString(body));
-    print(getPrettyJSONString(response.body));
+    return body;
+    Dialogs dialogs = new Dialogs(context);
+    //dialogs.ShowD("JSON GET", getPrettyJSONString(body));
+    //print(getPrettyJSONString(response.body));
   }
 
-  makePostRequest(String url, String jsonFile)  async {
+  makePostRequest(String url, String jsonFile) async {
     Map<String, String> headers = {"Content-type": "application/json"};
     Response response = await post(url,
         headers: headers,
         body: jsonFile); // check the status code for the result
     int statusCode = response
         .statusCode; // this API passes back the id of the new item added to the body
-    showToast(response.body);
-    return response.body;
+    //showToast(response.body);
+
+    //var body = json.decode(response.body);
+    //body = body['items'];
+    print(response.body);
+  }
+
+  uploadFile(String url, String path, String query) async {
+    final postUri = Uri.parse(url);
+    MultipartRequest request = MultipartRequest('POST', postUri);
+
+    MultipartFile multipartFile = await MultipartFile.fromPath(
+        query, path); //returns a Future<MultipartFile>
+
+    request.files.add(multipartFile);
+
+    StreamedResponse response = await request.send();
   }
 
   formatJson(String jsonString) {
