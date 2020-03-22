@@ -5,92 +5,119 @@ import 'package:flutter/material.dart';
 import 'package:hallsmusic/appbar.dart';
 import 'package:hallsmusic/rq.dart';
 import 'package:hallsmusic/toasts.dart';
+import 'package:hallsmusic/links.dart';
 import 'package:http/http.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'login.dart';
 
-class UploadSong extends StatelessWidget {
+class UploadSong extends StatefulWidget {
+  @override
+  _UploadSongState createState() => _UploadSongState();
+}
+
+class _UploadSongState extends State<UploadSong> {
   File img, song;
+
   final name = TextEditingController();
-  final email = TextEditingController();
+
   final description = TextEditingController();
-  final genre = TextEditingController();
+
+  Color colorPicture = Colors.grey, colorSong = Colors.grey;
+
+  String genre = '';
+
   RequestBuilder requestBuilder;
+
   @override
   Widget build(BuildContext context) {
     requestBuilder = new RequestBuilder(context);
     return Scaffold(
-        appBar: makeAppBar('Upload Song'),
+        appBar: makeAppBar('Upload Song', true),
         body: ListView(children: [
           TextField(
             obscureText: false,
             controller: name,
+            maxLength: 30,
             decoration: InputDecoration(
               border: OutlineInputBorder(),
-              labelText: 'name',
+              labelText: 'Name of Song',
             ),
           ),
-          TextField(
-            obscureText: false,
-            controller: email,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'email',
+          Container(
+            child: TextField(
+              maxLines: 5,
+              obscureText: false,
+              controller: description,
+              maxLength: 100,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Description of Song (100 Words)',
+              ),
             ),
           ),
-          TextField(
-            obscureText: false,
-            controller: description,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'description',
-            ),
-          ),
-          TextField(
-            obscureText: false,
-            controller: genre,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'genre',
-            ),
-          ),
-          RaisedButton(
-            child: Text('Choose Picture'),
-            onPressed: () async {
-              img = await FilePicker.getFile(type: FileType.image);
-              requestBuilder.uploadFile(
-                  "http://hall-server-master-dev.us-west-2.elasticbeanstalk.com/public/upload-image",
-                  img.path,
-                  'image');
-              //showToast(img.path);
+          new DropdownButton<String>(
+            hint: Text('Genre'),
+            items: <String>[
+              'Hip-Hop',
+              'Pop',
+              'RnB',
+              'Reggae',
+              'Soca',
+              'Dancehall',
+              'Rock'
+            ].map((String value) {
+              return new DropdownMenuItem<String>(
+                value: value,
+                child: new Text(value),
+              );
+            }).toList(),
+            onChanged: (String value) {
+              showToast(value);
+              genre = value;
             },
           ),
           RaisedButton(
-            child: Text('Choose Song'),
+            child: Text('Choose Picture'),
+            color: colorPicture,
+            onPressed: () async {
+              img = await FilePicker.getFile(type: FileType.image);
+              setState(() {
+                if (img.path.length > 1) colorPicture = Colors.blue;
+              });
+
+              showToast('Picture Selected');
+            },
+          ),
+          RaisedButton(
+            child: Text('Choose Song File'),
+            color: colorSong,
             onPressed: () async {
               song = await FilePicker.getFile(type: FileType.audio);
-              uploadFile(
-                  "http://hall-server-master-dev.us-west-2.elasticbeanstalk.com/public/upload-song",
-                  song.path,
-                  'song');
-              //showToast(song.path);
+              setState(() {
+                if (song.path.length > 1) colorSong = Colors.blue;
+              });
+
+              showToast('Song Selected');
             },
           ),
           RaisedButton(
             child: Text('Upload'),
-            onPressed: () {
+            onPressed: () async {
+              SharedPreferences prefs = await SharedPreferences.getInstance();
               String json = '{"name":"' +
                   name.text +
                   '","description":"' +
                   description.text +
                   '","genre":"' +
-                  genre.text +
+                  genre +
                   '","email":"' +
-                  email.text +
+                  prefs.getString('username') +
                   '"}';
-              requestBuilder.makePostRequest(
-                  "http://hall-server-master-dev.us-west-2.elasticbeanstalk.com/public/add-song",
-                  json);
+              requestBuilder.makePostRequest(addEndpoint("add-song"), json);
+              uploadFile(addEndpoint("upload-song"), song.path, 'song');
+              uploadFile(addEndpoint("upload-img"), img.path, 'image');
+              Navigator.pop(context);
             },
           )
         ]));
@@ -104,6 +131,6 @@ class UploadSong extends StatelessWidget {
     request.fields['name'] = name.text;
     request.files.add(multipartFile);
     StreamedResponse response = await request.send();
-    if (response.statusCode == 200) showToast("Uploaded!");
+    if (response.statusCode == 200) showToast("Uploaded " + query);
   }
 }

@@ -1,12 +1,18 @@
+import 'dart:convert';
+import 'package:audioplayer/audioplayer.dart';
 import 'package:flutter/material.dart';
+import 'package:hallsmusic/links.dart';
 import 'package:hallsmusic/musicplayer.dart';
 import 'package:hallsmusic/rq.dart';
 import 'package:hallsmusic/search.dart';
 import 'package:hallsmusic/settings.dart';
 import 'package:hallsmusic/song.dart';
 import 'package:hallsmusic/toasts.dart';
+import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:flutter_animation_set/widget/transition_animations.dart';
+import 'package:flutter_animation_set/widget/behavior_animations.dart';
 import 'appbar.dart';
 import 'dialogs.dart';
 
@@ -30,27 +36,21 @@ class MyStatefulWidget extends StatefulWidget {
 }
 
 class _MyStatefulWidgetState extends State<MyStatefulWidget> {
+  List<Song> songList = [];
   MusicPlayer musicPlayer;
-  Text text = Text("-"),
-      text2 = Text("SONG DETAIL"),
-      songState = Text("Paused");
+  bool isVisible = false;
+  Icon icon = Icon(Icons.pause);
+  String songState = "Paused";
+  bool songAnimation = false;
   int _selectedIndex = 0;
   Dialogs dialogs;
-
   SettingsList settingsList;
   RequestBuilder requestBuilder;
-  var decodedJson;
-  static const TextStyle optionStyle =
-      TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
   List<Widget> _widgetOptions;
   SharedPreferences sharedPreferences;
-  List<Song> songlist = [];
-
-  updateSongText(String value) {
-    setState(() {
-      text = Text(value);
-    });
-  }
+  Song currentSong =
+      new Song("name", "email", "description", "genre", "picture", "song");
+  TextStyle textStyle = TextStyle(fontSize: 30.0);
 
   @override
   Widget build(BuildContext context) {
@@ -62,9 +62,16 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
       context: context,
       value: value,
       musicPlayer: musicPlayer,
-      onSearchDone: (String val) => setState(() {
-        text = Text(val);
-        songState = Text('Playing');
+      onSearchDone: () => setState(() {
+        print('Search Done');
+      }),
+      onSongSelected: (Song song, link) => setState(() {
+        updateSong(song);
+        songState = 'Playing';
+        songAnimation = true;
+        icon = new Icon(Icons.pause);
+        currentSong.song = link;
+        musicPlayer.audioPlayerState = AudioPlayerState.PLAYING;
       }),
     );
     settingsList = new SettingsList(context);
@@ -72,60 +79,183 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     _widgetOptions.add(createExplore());
     _widgetOptions.add(searchScreen.build(context));
     _widgetOptions
-        .add(createSongList('{"field": "name", "value": "' + '' + '"}'));
+        .add(createCollections('{"field": "name", "value": "' + '' + '"}'));
     _widgetOptions.add(settingsList.getSettingsList());
+    //return loadUI();
+    return loadUI();
+  }
 
+  updateSong(Song value) {
+    setState(() {
+      currentSong = value;
+      isVisible = true;
+    });
+  }
+
+  loadUI() {
     return Scaffold(
-      appBar: makeAppBar('Halls Music'),
+      appBar: makeAppBar('Halls Music', false),
       body: SlidingUpPanel(
         minHeight: 50,
+        color: Colors.black.withOpacity(1),
         panel: Center(
-          child: text2,
+          child: Column(
+            children: <Widget>[
+              SizedBox(
+                height: 50,
+              ),
+              Text(currentSong.name),
+              Text(currentSong.description),
+              Text(currentSong.email),
+              Text(currentSong.genre),
+              IconButton(
+                icon: icon,
+                onPressed: () {
+                  if (songState == 'Playing') {
+                    setState(() {
+                      musicPlayer.audioPlayerState = AudioPlayerState.PAUSED;
+                      songAnimation = false;
+                      icon = new Icon(Icons.play_arrow);
+
+                      songState = 'Paused';
+                    });
+
+                    musicPlayer.pause();
+                  } else if (songState == 'Paused') {
+                    setState(() {
+                      songState = 'Playing';
+                      songAnimation = true;
+                      showToast(musicPlayer.song);
+                      icon = new Icon(Icons.pause);
+                      musicPlayer.audioPlayerState = AudioPlayerState.PLAYING;
+                      musicPlayer.seek(addStorage(currentSong.song));
+                    });
+                  }
+                },
+              ),
+            ],
+          ),
         ),
         collapsed: Container(
-            color: Colors.black,
+            color: Colors.black.withOpacity(1),
             child: Row(
               children: <Widget>[
-                SizedBox(width: 30),
-                text,
-                SizedBox(width: 150),
-                RaisedButton(
-                  child: songState,
+                SizedBox(width: 10),
+                Visibility(
+                  visible: songAnimation,
+                  child: YYBlinkGrid(),
+                ),
+                SizedBox(width: 10),
+                Text(currentSong.name),
+                Spacer(),
+                IconButton(
+                  icon: icon,
                   onPressed: () {
-                    if (songState.data == 'Playing') {
+                    if (songState == 'Playing') {
                       setState(() {
-                        songState = Text('Paused');
+                        musicPlayer.audioPlayerState = AudioPlayerState.PAUSED;
+                        icon = new Icon(Icons.play_arrow);
+                        songAnimation = false;
+
+                        songState = 'Paused';
                       });
 
                       musicPlayer.pause();
-                    } else if (songState.data == 'Paused') {
-                      songState = Text('Playing');
+                    } else if (songState == 'Paused') {
+                      setState(() {
+                        songState = 'Playing';
+                        songAnimation = true;
+                        showToast(musicPlayer.song);
+                        icon = new Icon(Icons.pause);
+                        musicPlayer.audioPlayerState = AudioPlayerState.PLAYING;
+                        musicPlayer.seek(addStorage(currentSong.song));
+                      });
                     }
                   },
-                )
+                ),
               ],
             )),
-        body: _widgetOptions.elementAt(_selectedIndex),
+        body: Container(
+          margin: const EdgeInsets.only(bottom: 200),
+          child: _widgetOptions.elementAt(_selectedIndex),
+        ),
       ),
       bottomNavigationBar: createNavBar(),
     );
   }
 
-  createSongList(String json) {
-    List<Song> list = [];
-    var decodedJson = requestBuilder.makeGetRequest(
-        "http://hall-server-master-dev.us-west-2.elasticbeanstalk.com/public/get-song");
-    return Text("Collection");
+  createCollections(String json) {
+    getSongListRequest();
+
+    return new ListView.builder(
+        scrollDirection: Axis.vertical,
+        shrinkWrap: true,
+        itemCount: songList == null ? 0 : songList.length,
+        itemBuilder: (BuildContext context, int index) {
+          return ListTile(
+            selected: true,
+            leading: Image.network(
+              addStorage(songList[index].picture),
+              height: 50,
+              width: 50,
+            ),
+            subtitle: Text(songList[index].email),
+            title: Text(songList[index].name),
+            onLongPress: () {
+              showToast(songList[index].description);
+            },
+            onTap: () {
+              updateSong(songList[index]);
+              songState = 'Playing';
+              songAnimation = true;
+              icon = new Icon(Icons.pause);
+              musicPlayer.stop();
+              musicPlayer.play(url: addStorage(songList[index].song));
+            },
+          );
+        });
   }
 
   createExplore() {
-    return Text("Explore");
+    return ListView(
+      // This next line does the trick.
+      scrollDirection: Axis.vertical,
+      children: <Widget>[
+        Container(
+          width: 160.0,
+          height: 100,
+          color: Colors.red,
+        ),
+        Container(
+          width: 160.0,
+          height: 100,
+          color: Colors.blue,
+        ),
+        Container(
+          width: 160.0,
+          height: 100,
+          color: Colors.green,
+        ),
+        Container(
+          width: 160.0,
+          height: 100,
+          color: Colors.yellow,
+        ),
+        Container(
+          width: 160.0,
+          height: 100,
+          color: Colors.orange,
+        ),
+      ],
+    );
   }
 
   Widget createNavBar() {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
-      elevation: 0.5,
+      elevation: 0.0,
+      backgroundColor: Colors.black,
+      unselectedItemColor: Colors.white,
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
           icon: Icon(Icons.explore),
@@ -137,7 +267,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.library_music),
-          title: Text('My Collection'),
+          title: Text('Collection'),
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.settings),
@@ -145,22 +275,30 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
         ),
       ],
       currentIndex: _selectedIndex,
-      selectedItemColor: Colors.black,
+      selectedItemColor: Colors.lightBlueAccent,
       onTap: _onItemTapped,
-    );
-  }
-
-  static Widget message(String msg) {
-    return Text(
-      msg,
-      style: optionStyle,
     );
   }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      //play();
     });
+  }
+
+  getSongListRequest() async {
+    // make GET request
+    List<Song> slist = [];
+    Response response =
+        await get(addEndpoint("get-song")); // sample info available in response
+    int statusCode = response.statusCode;
+    Map<String, String> headers = response.headers;
+    String contentType = headers['content-type'];
+    var body = json.decode(response.body);
+    body = body['items'];
+    for (var item in body) {
+      slist.add(new Song.fromJson(item));
+    }
+    songList = slist;
   }
 }
