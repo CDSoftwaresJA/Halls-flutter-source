@@ -41,6 +41,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   bool isVisible = false;
   Icon icon = Icon(Icons.pause);
   String songState = "Paused";
+  bool selected = false;
   bool songAnimation = false;
   int _selectedIndex = 0;
   Dialogs dialogs;
@@ -193,7 +194,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
         itemCount: songList == null ? 0 : songList.length,
         itemBuilder: (BuildContext context, int index) {
           return ListTile(
-            selected: true,
+            //selected: selected,
             leading: Image.network(
               addStorage(songList[index].picture),
               height: 50,
@@ -205,6 +206,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
               showToast(songList[index].description);
             },
             onTap: () {
+              selected = true;
               updateSong(songList[index]);
               songState = 'Playing';
               songAnimation = true;
