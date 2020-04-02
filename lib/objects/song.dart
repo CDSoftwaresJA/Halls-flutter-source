@@ -1,8 +1,18 @@
 class Song {
   String name, email, description, genre, picture, song;
+  String json;
 
   Song(this.name, this.email, this.description, this.genre, this.picture,
       this.song);
+
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'email': email,
+        'description': description,
+        'genre': genre,
+        'picture': picture,
+        'song': song,
+      };
 
   factory Song.fromJson(dynamic json) {
     return Song(

@@ -1,29 +1,33 @@
-import 'dart:convert';
-import 'package:audioplayer/audioplayer.dart';
 import 'package:flutter/material.dart';
-import 'package:hallsmusic/links.dart';
-import 'package:hallsmusic/musicplayer.dart';
-import 'package:hallsmusic/rq.dart';
-import 'package:hallsmusic/search.dart';
-import 'package:hallsmusic/settings.dart';
-import 'package:hallsmusic/song.dart';
-import 'package:hallsmusic/toasts.dart';
-import 'package:http/http.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:hallsmusic/pages/search.dart';
+import 'package:hallsmusic/pages/splash.dart';
+import 'package:hallsmusic/panel.dart';
+import 'package:hallsmusic/settings/settings.dart';
+import 'package:hallsmusic/utils/database.dart';
+import 'package:hallsmusic/utils/links.dart';
+import 'package:hallsmusic/utils/toasts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:flutter_animation_set/widget/transition_animations.dart';
-import 'package:flutter_animation_set/widget/behavior_animations.dart';
-import 'appbar.dart';
-import 'dialogs.dart';
+import 'pages/collections.dart';
+import 'objects/song.dart';
+import 'utils/appbar.dart';
+import 'details.dart';
+import 'pages/explore.dart';
+import 'utils/musicplayer.dart';
 
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: new ThemeData(brightness: Brightness.dark),
-      home: MyStatefulWidget(),
+    return CupertinoApp(
+      theme: new CupertinoThemeData(
+          brightness: brightness(),
+          primaryColor: iconStyle(),
+          textTheme: CupertinoTextThemeData(primaryColor: iconStyle()),
+          scaffoldBackgroundColor: backGroundColor(),
+          barBackgroundColor: backGroundColor()),
+      home: SplashScreen(),
     );
   }
 }
@@ -36,271 +40,169 @@ class MyStatefulWidget extends StatefulWidget {
 }
 
 class _MyStatefulWidgetState extends State<MyStatefulWidget> {
-  List<Song> songList = [];
-  MusicPlayer musicPlayer;
-  bool isVisible = false;
-  Icon icon = Icon(Icons.pause);
+  static MusicPlayer musicPlayer;
+  static Panel panel = Panel(
+    playing: false,
+  );
   String songState = "Paused";
-  bool selected = false;
-  bool songAnimation = false;
-  int _selectedIndex = 0;
-  Dialogs dialogs;
-  SettingsList settingsList;
-  RequestBuilder requestBuilder;
   List<Widget> _widgetOptions;
-  SharedPreferences sharedPreferences;
-  Song currentSong =
-      new Song("name", "email", "description", "genre", "picture", "song");
-  TextStyle textStyle = TextStyle(fontSize: 30.0);
+  DB db;
+  List<Song> favList = [];
+  Song currentSong = new Song("name", "email", "description", "genre",
+      "upload/abott%40adorable.png", "song");
 
   @override
   Widget build(BuildContext context) {
-    musicPlayer = new MusicPlayer();
-    requestBuilder = new RequestBuilder(context);
-    dialogs = new Dialogs(context);
-    String value = '';
-    SearchScreen searchScreen = new SearchScreen(
-      context: context,
-      value: value,
-      musicPlayer: musicPlayer,
-      onSearchDone: () => setState(() {
-        print('Search Done');
-      }),
-      onSongSelected: (Song song, link) => setState(() {
-        updateSong(song);
-        songState = 'Playing';
-        songAnimation = true;
-        icon = new Icon(Icons.pause);
-        currentSong.song = link;
-        musicPlayer.audioPlayerState = AudioPlayerState.PLAYING;
-      }),
-    );
-    settingsList = new SettingsList(context);
     _widgetOptions = <Widget>[];
-    _widgetOptions.add(createExplore());
-    _widgetOptions.add(searchScreen.build(context));
-    _widgetOptions
-        .add(createCollections('{"field": "name", "value": "' + '' + '"}'));
-    _widgetOptions.add(settingsList.getSettingsList());
-    //return loadUI();
-    return loadUI();
+    _widgetOptions.add(Explore());
+    _widgetOptions.add(SearchScreen(
+      openProfile: (String email) {
+        openProfile(email);
+      },
+      addToFavourite: (Song song) {
+        showToast("Added to Favourites", context);
+        if (mounted)
+          setState(() {
+            db.addSong(song, 'song');
+          });
+        //db.getSongList();
+      },
+      playSong: (Song song, List<Song> searchList) {
+        playSong(song, searchList);
+      },
+    ));
+    _widgetOptions.add(new Collections(
+      db: db,
+      openProfile: (String email) {
+        return toProfile(email);
+      },
+      playSong: (Song song, List<Song> slist) {
+        playSong(song, slist);
+      },
+    ));
+    _widgetOptions.add(SettingsList(
+      logOut: () {
+        logout();
+      },
+      toProfile: () async {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        openProfile(prefs.getString('username'));
+        //showToast(prefs.getString('username'));
+      },
+    ));
+
+    return loadUI2();
   }
 
-  updateSong(Song value) {
-    setState(() {
-      currentSong = value;
-      isVisible = true;
-    });
-  }
-
-  loadUI() {
-    return Scaffold(
-      appBar: makeAppBar('Halls Music', false),
-      body: SlidingUpPanel(
-        minHeight: 50,
-        color: Colors.black.withOpacity(1),
-        panel: Center(
-          child: Column(
-            children: <Widget>[
-              SizedBox(
-                height: 50,
-              ),
-              Text(currentSong.name),
-              Text(currentSong.description),
-              Text(currentSong.email),
-              Text(currentSong.genre),
-              IconButton(
-                icon: icon,
-                onPressed: () {
-                  if (songState == 'Playing') {
-                    setState(() {
-                      musicPlayer.audioPlayerState = AudioPlayerState.PAUSED;
-                      songAnimation = false;
-                      icon = new Icon(Icons.play_arrow);
-
-                      songState = 'Paused';
-                    });
-
-                    musicPlayer.pause();
-                  } else if (songState == 'Paused') {
-                    setState(() {
-                      songState = 'Playing';
-                      songAnimation = true;
-                      showToast(musicPlayer.song);
-                      icon = new Icon(Icons.pause);
-                      musicPlayer.audioPlayerState = AudioPlayerState.PLAYING;
-                      musicPlayer.seek(addStorage(currentSong.song));
-                    });
-                  }
-                },
-              ),
-            ],
-          ),
+  toProfile(String name) {
+    return GestureDetector(
+        child: Text(
+          name,
+          style: textStyle(),
         ),
-        collapsed: Container(
-            color: Colors.black.withOpacity(1),
-            child: Row(
-              children: <Widget>[
-                SizedBox(width: 10),
-                Visibility(
-                  visible: songAnimation,
-                  child: YYBlinkGrid(),
-                ),
-                SizedBox(width: 10),
-                Text(currentSong.name),
-                Spacer(),
-                IconButton(
-                  icon: icon,
-                  onPressed: () {
-                    if (songState == 'Playing') {
-                      setState(() {
-                        musicPlayer.audioPlayerState = AudioPlayerState.PAUSED;
-                        icon = new Icon(Icons.play_arrow);
-                        songAnimation = false;
-
-                        songState = 'Paused';
-                      });
-
-                      musicPlayer.pause();
-                    } else if (songState == 'Paused') {
-                      setState(() {
-                        songState = 'Playing';
-                        songAnimation = true;
-                        showToast(musicPlayer.song);
-                        icon = new Icon(Icons.pause);
-                        musicPlayer.audioPlayerState = AudioPlayerState.PLAYING;
-                        musicPlayer.seek(addStorage(currentSong.song));
-                      });
-                    }
-                  },
-                ),
-              ],
-            )),
-        body: Container(
-          margin: const EdgeInsets.only(bottom: 200),
-          child: _widgetOptions.elementAt(_selectedIndex),
-        ),
-      ),
-      bottomNavigationBar: createNavBar(),
-    );
-  }
-
-  createCollections(String json) {
-    getSongListRequest();
-
-    return new ListView.builder(
-        scrollDirection: Axis.vertical,
-        shrinkWrap: true,
-        itemCount: songList == null ? 0 : songList.length,
-        itemBuilder: (BuildContext context, int index) {
-          return ListTile(
-            //selected: selected,
-            leading: Image.network(
-              addStorage(songList[index].picture),
-              height: 50,
-              width: 50,
-            ),
-            subtitle: Text(songList[index].email),
-            title: Text(songList[index].name),
-            onLongPress: () {
-              showToast(songList[index].description);
-            },
-            onTap: () {
-              selected = true;
-              updateSong(songList[index]);
-              songState = 'Playing';
-              songAnimation = true;
-              icon = new Icon(Icons.pause);
-              musicPlayer.stop();
-              musicPlayer.play(url: addStorage(songList[index].song));
-            },
-          );
+        onTap: () {
+          openProfile(name);
         });
   }
 
-  createExplore() {
-    return ListView(
-      // This next line does the trick.
-      scrollDirection: Axis.vertical,
+  logout() {
+    Navigator.pushReplacement(
+      context,
+      CupertinoPageRoute(builder: (context) => SplashScreen()),
+    );
+  }
+
+  openProfile(String name) async {
+    Navigator.push(
+        context,
+        CupertinoPageRoute(
+            builder: (context) => Details(
+                  title: name,
+                  playSong: (Song song, List<Song> slist) {
+                    playSong(song, slist);
+                  },
+                  addToFavourite: (Song song) {
+                    showToast("Added to Favourites", context);
+                  },
+                )));
+  }
+
+  addToList(String list, String json) async {}
+
+  loadUI2() {
+    return Stack(
       children: <Widget>[
-        Container(
-          width: 160.0,
-          height: 100,
-          color: Colors.red,
+        CupertinoTabScaffold(
+          resizeToAvoidBottomInset: false,
+          tabBar: CupertinoTabBar(
+            onTap: (int index) {
+              if (mounted) setState(() {});
+            },
+            items: <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                icon: Icon(Icons.explore),
+                title: Text('Explore'),
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.search),
+                title: Text('Search'),
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.library_music),
+                title: Text('Collection'),
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.settings),
+                title: Text('Settings'),
+              ),
+            ],
+          ),
+          tabBuilder: (BuildContext context, int index) {
+            return CupertinoTabView(
+              builder: (BuildContext context) {
+                return Stack(
+                  children: <Widget>[
+                    _widgetOptions[index],
+                  ],
+                );
+              },
+            );
+          },
         ),
-        Container(
-          width: 160.0,
-          height: 100,
-          color: Colors.blue,
-        ),
-        Container(
-          width: 160.0,
-          height: 100,
-          color: Colors.green,
-        ),
-        Container(
-          width: 160.0,
-          height: 100,
-          color: Colors.yellow,
-        ),
-        Container(
-          width: 160.0,
-          height: 100,
-          color: Colors.orange,
-        ),
+        panel
       ],
     );
   }
 
-  Widget createNavBar() {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      elevation: 0.0,
-      backgroundColor: Colors.black,
-      unselectedItemColor: Colors.white,
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.explore),
-          title: Text('Explore'),
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.search),
-          title: Text('Search'),
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.library_music),
-          title: Text('Collection'),
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          title: Text('Settings'),
-        ),
-      ],
-      currentIndex: _selectedIndex,
-      selectedItemColor: Colors.lightBlueAccent,
-      onTap: _onItemTapped,
-    );
+  @override
+  void initState() {
+    super.initState();
+    db = DB();
+    db.initDB();
+    musicPlayer = new MusicPlayer();
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  getSongListRequest() async {
-    // make GET request
-    List<Song> slist = [];
-    Response response =
-        await get(addEndpoint("get-song")); // sample info available in response
-    int statusCode = response.statusCode;
-    Map<String, String> headers = response.headers;
-    String contentType = headers['content-type'];
-    var body = json.decode(response.body);
-    body = body['items'];
-    for (var item in body) {
-      slist.add(new Song.fromJson(item));
-    }
-    songList = slist;
+  playSong(Song song, List<Song> list) async {
+    songState = 'Playing';
+    musicPlayer.play(url: addStorage(song.song));
+    if (mounted)
+      setState(() {
+        //db.addSong(song, 'recent');
+        currentSong = song;
+        panel = Panel(
+          playing: true,
+          openProfile: (String email) {
+            openProfile(email);
+          },
+          currentSong: currentSong,
+          songState: songState,
+          musicPlayer: musicPlayer,
+          btnList: list,
+          icon: Icon(Icons.pause),
+          playSong: (Song song) {
+            playSong(song, list);
+          },
+        );
+      });
   }
 }

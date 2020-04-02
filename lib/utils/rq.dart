@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:hallsmusic/dialogs.dart';
-import 'package:hallsmusic/song.dart';
-import 'package:hallsmusic/toasts.dart';
+import 'file:///G:/Flutter%20Projects/hal_src_march_23/lib/objects/song.dart';
+import 'file:///G:/Flutter%20Projects/hal_src_march_23/lib/utils/toasts.dart';
 import 'package:http/http.dart';
 
 class RequestBuilder {
@@ -20,7 +19,6 @@ class RequestBuilder {
     body = body['items'];
 
     return body;
-    Dialogs dialogs = new Dialogs(context);
     //dialogs.ShowD("JSON GET", getPrettyJSONString(body));
     //print(getPrettyJSONString(response.body));
   }
