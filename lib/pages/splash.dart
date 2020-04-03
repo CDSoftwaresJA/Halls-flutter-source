@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:hallsmusic/settings/login.dart';
+import 'package:hallsmusic/test.dart';
 import 'package:hallsmusic/utils/appbar.dart';
 
 import '../main.dart';
@@ -43,6 +44,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 Navigator.push(
                     context, CupertinoPageRoute(builder: (context) => Login()));
               },
+
             ),
           ],
         ),

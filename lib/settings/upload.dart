@@ -45,7 +45,7 @@ class _UploadSongState extends State<UploadSong> {
       Text("Rock")
     ];
     requestBuilder = new RequestBuilder(context);
-    return CupertinoPageScaffold(
+    return AbsorbPointer(child:  CupertinoPageScaffold(
       backgroundColor: backGroundColor(),
       navigationBar: makeCupertinoAppBar('Upload Song'),
       child: Material(
@@ -138,7 +138,9 @@ class _UploadSongState extends State<UploadSong> {
                 await uploadFile(addEndpoint("upload-song"), song.path, 'song');
                 await uploadFile(addEndpoint("upload-img"), img.path, 'image');
                 //Navigator.pop(context);
-                isLoading = false;
+                setState(() {
+                  isLoading = false;
+                });
               },
             ),
             Visibility(
@@ -149,7 +151,8 @@ class _UploadSongState extends State<UploadSong> {
               ),
             ),
           ])),
-    );
+    ),
+    absorbing: isLoading,);
   }
 
   uploadFile(String url, String path, String query) async {

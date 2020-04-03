@@ -41,15 +41,22 @@ class MyStatefulWidget extends StatefulWidget {
 
 class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   static MusicPlayer musicPlayer;
-  static Panel panel = Panel(
-    playing: false,
-  );
+  static Panel panel ;
   String songState = "Paused";
   List<Widget> _widgetOptions;
-  DB db;
+  static DB db;
   List<Song> favList = [];
   Song currentSong = new Song("name", "email", "description", "genre",
       "upload/abott%40adorable.png", "song");
+
+
+  @protected
+  @mustCallSuper
+  void dispose() {
+    musicPlayer=null;
+    panel = null;
+    db = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -180,21 +187,23 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     db = DB();
     db.initDB();
     musicPlayer = new MusicPlayer();
+    Panel.playing=false;
+    panel= Panel();
   }
 
   playSong(Song song, List<Song> list) async {
     songState = 'Playing';
-    musicPlayer.play(url: addStorage(song.song));
+    MusicPlayer.play(url: addStorage(song.song));
+
     if (mounted)
       setState(() {
         //db.addSong(song, 'recent');
         currentSong = song;
+        Panel.playing=true;
         panel = Panel(
-          playing: true,
           openProfile: (String email) {
             openProfile(email);
           },
-          currentSong: currentSong,
           songState: songState,
           musicPlayer: musicPlayer,
           btnList: list,
@@ -203,6 +212,8 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
             playSong(song, list);
           },
         );
+        Panel.currentSong=currentSong;
       });
+
   }
 }

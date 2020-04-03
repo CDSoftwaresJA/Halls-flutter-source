@@ -6,6 +6,7 @@ import 'package:hallsmusic/utils/appbar.dart';
 import 'package:hallsmusic/utils/toasts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../pages/splash.dart';
+import '../test.dart';
 import 'createaccount.dart';
 import 'package:flutter/cupertino.dart';
 import 'login.dart';
@@ -22,11 +23,13 @@ class SettingsList extends StatefulWidget {
 
 class _SettingsListState extends State<SettingsList> {
   bool loggedIn = true;
+  bool isAdmin = false;
+  bool isArtist = false;
   SharedPreferences sharedPreferences;
   Widget getSettingsList() {
     var listView = ListView(
       children: <Widget>[
-        ListTile(
+        Visibility(child:ListTile(
           title: Text(
             "View/Edit Profile",
             style: textStyle(),
@@ -43,8 +46,8 @@ class _SettingsListState extends State<SettingsList> {
               showToast("Please login to edit profile.", context);
             }
           },
-        ),
-        ListTile(
+        ), visible:isArtist ,),
+        Visibility(child:ListTile(
           title: Text(
             "My Music",
             style: textStyle(),
@@ -60,8 +63,8 @@ class _SettingsListState extends State<SettingsList> {
               showToast("Please login to view your songs.", context);
             }
           },
-        ),
-        ListTile(
+        ), visible:isArtist ,),
+        Visibility(child:ListTile(
           title: Text(
             "Upload Song",
             style: textStyle(),
@@ -80,8 +83,8 @@ class _SettingsListState extends State<SettingsList> {
               showToast("Please login to upload songs.", context);
             }
           },
-        ),
-        ListTile(
+        ), visible:isArtist ,),
+        Visibility(child:ListTile(
           title: Text(
             "Profile Statistics",
             style: textStyle(),
@@ -93,7 +96,21 @@ class _SettingsListState extends State<SettingsList> {
           onTap: () {
             showToast("Not Implemented", context);
           },
-        ),
+        ), visible:isArtist ,),
+        Visibility(child: ListTile(
+          title: Text(
+            "Experiments",
+            style: textStyle(),
+          ),
+          leading: Icon(
+            Icons.build,
+            color: iconStyle(),
+          ),
+          onTap: () {
+            Navigator.push(
+                context, CupertinoPageRoute(builder: (context) => Test()));
+          },
+        ), visible: isAdmin,),
         ListTile(
           title: Text(
             "Log out",
@@ -117,11 +134,28 @@ class _SettingsListState extends State<SettingsList> {
 
   makeSharedPreferences() async {
     sharedPreferences = await SharedPreferences.getInstance();
+    if (sharedPreferences.getString("type")=="Admin"){
+      setState(() {
+        isAdmin=true;
+        isArtist=true;
+
+
+
+      }
+      );
+     }
+    if (sharedPreferences.getString("type")=="Producer"||sharedPreferences.getString("type")=="Artiste"){
+       isArtist = true;
+    }
+
   }
 
   @override
   Widget build(BuildContext context) {
     makeSharedPreferences();
+
+
+
     return CupertinoPageScaffold(
       navigationBar: makeCupertinoAppBar("Settings"),
       child: getSettingsList(),

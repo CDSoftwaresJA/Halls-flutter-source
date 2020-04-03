@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "474325384558",
+    "firebase_url": "https://halls-music.firebaseio.com",
+    "project_id": "halls-music",
+    "storage_bucket": "halls-music.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:474325384558:android:b04cb7f863d3f233e2d57f",
+        "android_client_info": {
+          "package_name": "com.konnexx.hallsmusic"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "474325384558-0q7td9f25fk8rma5k0ooe2c67i7dkktv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.konnexx.hallsmusic",
+            "certificate_hash": "11e33a2ac67874e33a82ac9c70c982cfaee2b7e3"
+          }
+        },
+        {
+          "client_id": "474325384558-u2m50qlssfg180dq9go4dq8fra0prpu4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_saoU2H3A04chzPA_z1mr78Ne8FYFEyU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "474325384558-u2m50qlssfg180dq9go4dq8fra0prpu4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -11,6 +11,13 @@ class CreateAccount extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    int chosen = 0;
+    List<Text> list = <Text>[
+      Text("User"),
+      Text("Artiste"),
+      Text("Producer"),
+
+    ];
     final style = TextStyle(color: Colors.black);
     return CupertinoPageScaffold(
         navigationBar: makeCupertinoAppBar('Create Account'),
@@ -57,6 +64,16 @@ class CreateAccount extends StatelessWidget {
                 SizedBox(
                   height: 20,
                 ),
+                CupertinoPicker(
+                  magnification: 1,
+                  backgroundColor: backGroundColor(),
+                  itemExtent: 50,
+                  looping: true,
+                  onSelectedItemChanged: (int index) {
+                    chosen = index;
+                  },
+                  children: list,
+                ),
                 RaisedButton(
                   child: Text('Create Account: '),
                   onPressed: () {
@@ -69,7 +86,7 @@ class CreateAccount extends StatelessWidget {
                         password +
                         '","name": "' +
                         username +
-                        '","type": "User"}';
+                        '","type": "'+list[chosen].data+'"}';
 
                     String jsonEmail = '{'
                         '"message":"Your account has been created!",'

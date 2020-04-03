@@ -1,31 +1,32 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hallsmusic/utils/appbar.dart';
 import 'package:hallsmusic/utils/links.dart';
 import 'package:hallsmusic/utils/musicplayer.dart';
-import 'package:hallsmusic/utils/toasts.dart';
+import 'package:hallsmusic/utils/slider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'objects/song.dart';
 
 class Panel extends StatefulWidget {
-  final Song currentSong;
+  static Song currentSong;
   final List<Song> btnList;
   final Function(Song song) playSong;
   final MusicPlayer musicPlayer;
-  final bool playing;
+  static bool playing;
+  static FixedExtentScrollController controller;
   Icon icon = Icon(Icons.pause);
   String songState;
   final Function(String email) openProfile;
 
   Panel(
       {Key key,
-      this.currentSong,
       this.songState,
       this.btnList,
       this.playSong,
       this.musicPlayer,
-      this.playing,
       this.icon,
       this.openProfile})
       : super(key: key);
@@ -39,26 +40,18 @@ class _PanelState extends State<Panel> {
   MaterialColor color = Colors.grey;
   MaterialColor color2 = Colors.grey;
   double barHeight = 50;
+
   bool fav = false, loop = false;
   List<CachedNetworkImage> itemList;
+  static Timer timer;
   @override
   Widget build(BuildContext context) {
     itemList = new List<CachedNetworkImage>();
-    FixedExtentScrollController controller = new FixedExtentScrollController();
-    for (Song song in widget.btnList) {
-      itemList.add(CachedNetworkImage(
-        imageUrl: addStorage(song.picture),
-        placeholder: (context, url) => getSpinKit(),
-        errorWidget: (context, url, error) => Icon(Icons.error),
-        width: 200,
-        height: 200,
-      ));
-    }
-
     return getSlidingPanel();
   }
 
   loadPanel() {
+
     return Scaffold(
       body: Material(
         textStyle: textStyle(),
@@ -68,24 +61,30 @@ class _PanelState extends State<Panel> {
             SizedBox(
               height: 30,
             ),
-            Text(widget.currentSong.name),
+            Text(Panel.currentSong.name),
             SizedBox(
               height: 10,
             ),
             CupertinoPicker(
               magnification: 1,
-              //scrollController: ,
               backgroundColor: backGroundColor(),
-              itemExtent: 250,
+              itemExtent: 350,
               looping: true,
               onSelectedItemChanged: (int index) {
-                //widget.playSong(widget.btnList[index]);
+                if (timer!=null){
+                  timer.cancel();
+                }
+                timer = Timer(const Duration(milliseconds: 700),(){
+                  widget.playSong(widget.btnList[index]);
+                });
+                //
               },
               children: itemList,
             ),
-            toProfile(widget.currentSong.email),
-            Text(widget.currentSong.genre),
-            MusicPlayer(),
+            Slide(),
+            toProfile(Panel.currentSong.email),
+            Text(Panel.currentSong.genre),
+            Spacer(),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -95,9 +94,10 @@ class _PanelState extends State<Panel> {
               ],
             ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              //mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 makeFavouriteBtn(),
+                Spacer(),
                 makeLoopBtn(),
               ],
             )
@@ -116,7 +116,7 @@ class _PanelState extends State<Panel> {
             SizedBox(width: 10),
 //                animation,
             SizedBox(width: 10),
-            Text(widget.currentSong.name),
+            Text(Panel.currentSong.name),
             Spacer(),
             makePlayBtn(),
             makeNextBtn(),
@@ -133,13 +133,13 @@ class _PanelState extends State<Panel> {
             widget.icon = new Icon(Icons.play_arrow);
             widget.songState = 'Paused';
           });
-          widget.musicPlayer.pause();
+          MusicPlayer.pause();
         } else if (widget.songState == 'Paused') {
           setState(() {
-            if (widget.currentSong.song != null) {
+            if (Panel.currentSong.song != null) {
               widget.songState = 'Playing';
               widget.icon = new Icon(Icons.pause);
-              widget.musicPlayer.resume(widget.currentSong.song);
+             MusicPlayer.resume(Panel.currentSong.song);
             }
           });
         }
@@ -153,10 +153,10 @@ class _PanelState extends State<Panel> {
       onPressed: () {
         widget.icon = new Icon(Icons.pause);
         try {
-          if (widget.btnList[widget.btnList.indexOf(widget.currentSong) + 1] !=
+          if (widget.btnList[widget.btnList.indexOf(Panel.currentSong) + 1] !=
               null)
             widget.playSong(
-                widget.btnList[widget.btnList.indexOf(widget.currentSong) + 1]);
+                widget.btnList[widget.btnList.indexOf(Panel.currentSong) + 1]);
           if (mounted) setState(() {});
         } catch (RangeError) {
           if (widget.btnList[0] != null) widget.playSong(widget.btnList[0]);
@@ -171,8 +171,7 @@ class _PanelState extends State<Panel> {
       icon: Icon(Icons.skip_previous),
       onPressed: () {
         widget.icon = new Icon(Icons.pause);
-        widget.musicPlayer.seekTo(addStorage(widget.currentSong.song), 0);
-        if (mounted) setState(() {});
+         MusicPlayer.seekTo(addStorage(Panel.currentSong.song), 0);
       },
     );
   }
@@ -215,11 +214,21 @@ class _PanelState extends State<Panel> {
     );
   }
 
+
   getSlidingPanel() {
-    if (widget.playing) {
+    if (Panel.playing) {
+      for (Song song in widget.btnList) {
+        itemList.add(CachedNetworkImage(
+          imageUrl: addStorage(song.picture),
+          placeholder: (context, url) => getSpinKit(),
+          errorWidget: (context, url, error) => Icon(Icons.error),
+          width: 300,
+          height: 300,
+        ));
+      }
       slidingUpPanel = SlidingUpPanel(
         minHeight: barHeight,
-        maxHeight: 500,
+        maxHeight: 600,
         panel: loadPanel(),
         parallaxEnabled: true,
         collapsed: loadCollapsed(),

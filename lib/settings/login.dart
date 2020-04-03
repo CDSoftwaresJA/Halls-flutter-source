@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hallsmusic/utils/toasts.dart';
 import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +8,7 @@ import '../utils/links.dart';
 import '../utils/rq.dart';
 import 'createaccount.dart';
 import 'package:flutter/cupertino.dart';
+
 
 class Login extends StatelessWidget {
   TextEditingController username = TextEditingController(),
@@ -72,6 +74,7 @@ class Login extends StatelessWidget {
                           CupertinoPageRoute(
                               builder: (context) => CreateAccount()));
                     },
+
                   ),
                 ],
               ))),
@@ -87,7 +90,8 @@ class Login extends StatelessWidget {
     int statusCode = response
         .statusCode; // this API passes back the id of the new item added to the body
     //showToast(response.body);
-    if (response.body == 'success') {
+    if (response.body == 'Admin'||response.body == 'User'||response.body == 'Artiste'||response.body == 'Producer') {
+      prefs.setString("type", response.body);
       prefs.setString('username', username.text);
       prefs.setString('password', password.text);
       showToast('Login Successful', context);

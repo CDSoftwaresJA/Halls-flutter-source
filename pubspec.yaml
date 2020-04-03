@@ -17,7 +17,10 @@ environment:
   sdk: ">=2.1.0 <3.0.0"
 
 dependencies:
+  google_sign_in: ^4.4.0
+  firebase_auth: ^0.15.5+3
   flushbar: ^1.10.0
+  cloud_firestore: ^0.13.4+2
   cached_network_image: ^2.0.0
   sqlcool: ^4.3.1
   flutter_spinkit: "^4.1.2"
