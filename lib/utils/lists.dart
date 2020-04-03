@@ -1,12 +1,8 @@
-import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:hallsmusic/objects/song.dart';
 import 'package:hallsmusic/utils/appbar.dart';
-import 'package:hallsmusic/utils/toasts.dart';
-import 'package:http/http.dart';
 
 import 'links.dart';
 

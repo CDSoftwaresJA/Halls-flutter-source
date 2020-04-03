@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:hallsmusic/utils/appbar.dart';
 import 'package:hallsmusic/utils/toasts.dart';
 import 'package:http/http.dart';
@@ -52,8 +51,7 @@ class _DetailsState extends State<Details> {
     Response response = await post(addEndpoint("find-song"),
         headers: headers,
         body: jsonDetails); // check the status code for the result
-    int statusCode = response
-        .statusCode; // this API passes back the id of the new item added to the body
+// this API passes back the id of the new item added to the body
     var body = json.decode(response.body);
     body = body['items'];
     for (var item in body) {

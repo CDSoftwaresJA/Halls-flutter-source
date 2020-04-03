@@ -1,8 +1,5 @@
-import 'dart:async';
 import 'package:sqlcool/sqlcool.dart';
 import 'package:hallsmusic/objects/song.dart';
-import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
 
 class DB {
   List<Song> list = [], recent = [];

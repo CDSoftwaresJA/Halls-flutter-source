@@ -5,9 +5,7 @@ import 'package:hallsmusic/utils/appbar.dart';
 import 'package:hallsmusic/utils/database.dart';
 import 'package:hallsmusic/utils/links.dart';
 import 'package:hallsmusic/utils/lists.dart';
-import 'package:hallsmusic/utils/toasts.dart';
 import 'package:http/http.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class Collections extends StatefulWidget {

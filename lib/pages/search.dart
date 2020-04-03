@@ -3,13 +3,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hallsmusic/utils/appbar.dart';
-import 'package:hallsmusic/utils/toasts.dart';
 import 'package:http/http.dart';
-import '../objects/account.dart';
 import '../objects/song.dart';
 import '../utils/links.dart';
-import '../main.dart';
-import '../utils/musicplayer.dart';
 
 class SearchScreen extends StatefulWidget {
   final Function(String email) openProfile;
@@ -37,8 +33,7 @@ class SearchScreenState extends State<SearchScreen> {
     Response response = await post(url,
         headers: headers,
         body: jsonFile); // check the status code for the result
-    int statusCode = response
-        .statusCode; // this API passes back the id of the new item added to the body
+// this API passes back the id of the new item added to the body
     var body = json.decode(response.body);
     body = body['items'];
     for (var item in body) {

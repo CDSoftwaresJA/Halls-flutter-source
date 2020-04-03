@@ -50,13 +50,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
       "upload/abott%40adorable.png", "song");
 
 
-  @protected
-  @mustCallSuper
-  void dispose() {
-    musicPlayer=null;
-    panel = null;
-    db = null;
-  }
+
 
   @override
   Widget build(BuildContext context) {

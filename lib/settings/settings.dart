@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hallsmusic/main.dart';
 import 'package:hallsmusic/settings/profile.dart';
 import 'package:hallsmusic/settings/upload.dart';
 import 'package:hallsmusic/utils/appbar.dart';
 import 'package:hallsmusic/utils/toasts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../pages/splash.dart';
 import '../test.dart';
-import 'createaccount.dart';
 import 'package:flutter/cupertino.dart';
-import 'login.dart';
-import '../utils/musicplayer.dart';
 
 class SettingsList extends StatefulWidget {
   final Function toProfile;

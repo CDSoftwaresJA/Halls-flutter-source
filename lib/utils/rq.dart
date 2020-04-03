@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'file:///G:/Flutter%20Projects/hal_src_march_23/lib/objects/song.dart';
-import 'file:///G:/Flutter%20Projects/hal_src_march_23/lib/utils/toasts.dart';
 import 'package:http/http.dart';
 
 class RequestBuilder {
@@ -12,9 +10,6 @@ class RequestBuilder {
   makeGetRequest(String url) async {
     // make GET request
     Response response = await get(url); // sample info available in response
-    int statusCode = response.statusCode;
-    Map<String, String> headers = response.headers;
-    String contentType = headers['content-type'];
     var body = json.decode(response.body);
     body = body['items'];
 
@@ -28,8 +23,7 @@ class RequestBuilder {
     Response response = await post(url,
         headers: headers,
         body: jsonFile); // check the status code for the result
-    int statusCode = response
-        .statusCode; // this API passes back the id of the new item added to the body
+// this API passes back the id of the new item added to the body
     //showToast(response.body);
 
     //var body = json.decode(response.body);
@@ -46,7 +40,6 @@ class RequestBuilder {
 
     request.files.add(multipartFile);
 
-    StreamedResponse response = await request.send();
   }
 
   formatJson(String jsonString) {
